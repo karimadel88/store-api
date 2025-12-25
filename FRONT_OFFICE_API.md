@@ -8,7 +8,27 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 1. Locations
+## 1. Homepage & Styling
+
+### Get Banners (Sliders)
+- **Endpoint:** `GET /banners`
+- **Goal:** Get list of active banners for the homepage slider.
+- **Response:**
+  ```json
+  [
+    {
+      "title": "Big Sale",
+      "subtitle": "Up to 50% off",
+      "imageId": { "url": "http://..." },
+      "link": "/category/sale",
+      "buttonText": "Shop Now"
+    }
+  ]
+  ```
+
+---
+
+## 2. Locations
 
 ### List Countries
 - **Endpoint:** `GET /countries`
@@ -22,7 +42,7 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 2. Products & Categories
+## 3. Products & Categories
 
 ### List Categories
 - **Endpoint:** `GET /categories`
@@ -54,7 +74,7 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 3. Cart & Shipping
+## 4. Cart & Shipping
 
 ### Calculate Shipping
 - **Endpoint:** `GET /shipping/calculate`
@@ -75,7 +95,7 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 4. Checkout
+## 5. Checkout
 
 ### Place Order
 - **Endpoint:** `POST /orders`
@@ -106,7 +126,7 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 5. Reviews & Contact
+## 6. Reviews & Contact
 
 ### Submit Review
 - **Endpoint:** `POST /reviews`
@@ -127,7 +147,7 @@ Default Development URL: `http://localhost:3000/api`
 
 ---
 
-## 6. Store Settings
+## 7. Store Settings
 
 ### Get Store Info
 - **Endpoint:** `GET /settings`

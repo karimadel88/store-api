@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Product } from './schemas/product.schema';
@@ -189,6 +189,35 @@ export class ProductsService {
     const result = await this.productModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException('Product not found');
+    }
+  }
+
+  async checkStockAvailability(items: { productId: string; quantity: number }[]): Promise<void> {
+    for (const item of items) {
+      const product = await this.productModel.findById(item.productId);
+      
+      if (!product) {
+        throw new NotFoundException(`Product not found: ${item.productId}`);
+      }
+
+      if (!product.isActive) {
+        throw new BadRequestException(`Product is not active: ${product.name}`);
+      }
+
+      if (product.quantity < item.quantity) {
+        throw new BadRequestException(
+          `Insufficient stock for product: ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`
+        );
+      }
+    }
+  }
+
+  async decrementStock(items: { productId: string; quantity: number }[]): Promise<void> {
+    for (const item of items) {
+      await this.productModel.findByIdAndUpdate(
+        item.productId,
+        { $inc: { quantity: -item.quantity } }
+      );
     }
   }
 }

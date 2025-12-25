@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Order, OrderStatus, PaymentStatus } from './schemas/order.schema';
 import { CreateOrderDto, QueryOrderDto } from './dto/order.dto';
+import { ProductsService } from '../products/products.service';
 
 export interface PaginatedOrders {
   data: Order[];
@@ -14,7 +15,10 @@ export interface PaginatedOrders {
 
 @Injectable()
 export class OrdersService {
-  constructor(@InjectModel(Order.name) private orderModel: Model<Order>) {}
+  constructor(
+    @InjectModel(Order.name) private orderModel: Model<Order>,
+    private readonly productsService: ProductsService,
+  ) {}
 
   private generateOrderNumber(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -23,6 +27,8 @@ export class OrdersService {
   }
 
   async create(createDto: CreateOrderDto): Promise<Order> {
+    await this.productsService.checkStockAvailability(createDto.items);
+
     const subtotal = createDto.items.reduce((sum, item) => sum + item.total, 0);
     const total = subtotal + createDto.shippingCost;
 
@@ -52,7 +58,11 @@ export class OrdersService {
     };
 
     const order = new this.orderModel(orderData);
-    return order.save();
+    const savedOrder = await order.save();
+    
+    await this.productsService.decrementStock(createDto.items);
+    
+    return savedOrder;
   }
 
   async findAll(query: QueryOrderDto): Promise<PaginatedOrders> {

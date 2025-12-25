@@ -64,11 +64,20 @@ export class CategoriesService {
     const countMap = new Map();
     productCounts.forEach(p => countMap.set(p._id.toString(), p.count));
 
-    // 3. Merge and Filter
-    const result = categories.map((cat: any) => ({
-      ...cat,
-      productCount: countMap.get(cat._id.toString()) || 0,
-    })).filter(cat => cat.productCount > 0);
+    // 3. Merge, Filter, and Transform Image URL
+    const baseUrl = process.env.BASE_URL || '';
+    
+    const result = categories.map((cat: any) => {
+      // Transform Image URL if exists
+      if (cat.imageId && cat.imageId.url && cat.imageId.url.startsWith('/')) {
+        cat.imageId.url = `${baseUrl}${cat.imageId.url}`;
+      }
+
+      return {
+        ...cat,
+        productCount: countMap.get(cat._id.toString()) || 0,
+      };
+    }).filter(cat => cat.productCount > 0);
 
     return result;
   }

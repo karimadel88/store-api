@@ -19,6 +19,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { BannersModule } from './modules/banners/banners.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ContactModule } from './modules/contact/contact.module';
     SettingsModule,
     DashboardModule,
     ContactModule,
+    BannersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
