@@ -1,10 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
+import { Media } from '../../media/schemas/media.schema';
 
 @Schema({ _id: false })
 export class ContactInfo {
   @Prop() email: string;
   @Prop() phone: string;
+  @Prop() whatsapp?: string; // International format without + or 00 (e.g., 201234567890)
   @Prop() address: string;
 }
 
@@ -35,6 +37,11 @@ export class Settings extends Document {
 
   @Prop({ type: SocialLinks, default: {} })
   socialLinks: SocialLinks;
+
+  @Prop({ type: Types.ObjectId, ref: 'Media' })
+  logoId?: Types.ObjectId;
+
+  logo?: Media; // Virtual field, populated when fetching
 
   createdAt: Date;
   updatedAt: Date;

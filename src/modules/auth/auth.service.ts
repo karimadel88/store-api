@@ -73,6 +73,10 @@ export class AuthService {
     return this.usersService.findOne(userId);
   }
 
+  async seedDefaultAdmin(): Promise<{ message: string; created: boolean }> {
+    return this.usersService.seedDefaultAdmin();
+  }
+
   private generateTokens(user: User): TokenResponse {
     const payload: JwtPayload = {
       sub: user._id.toString(),

@@ -9,9 +9,13 @@ export class SettingsService {
   constructor(@InjectModel(Settings.name) private settingsModel: Model<Settings>) {}
 
   async get(): Promise<Settings> {
-    let settings = await this.settingsModel.findOne().exec();
+    let settings = await this.settingsModel.findOne().populate('logoId').exec();
     if (!settings) {
       settings = await this.settingsModel.create({ storeName: 'Store' });
+    }
+    // Map populated logoId to logo field for cleaner API response
+    if (settings.logoId) {
+      settings.logo = settings.logoId as any;
     }
     return settings;
   }
@@ -24,6 +28,7 @@ export class SettingsService {
     delete updateDto.createdAt;
     delete updateDto.updatedAt;
     delete updateDto.__v;
+    delete (updateDto as any).logo; // Virtual field, not stored
 
     Object.assign(settings, updateDto);
     return settings.save();

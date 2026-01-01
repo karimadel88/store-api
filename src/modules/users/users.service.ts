@@ -62,6 +62,27 @@ export class UsersService {
     }
   }
 
+  async seedDefaultAdmin(): Promise<{ message: string; created: boolean }> {
+    const email = 'ka565872@gmail.com';
+    const existingUser = await this.userModel.findOne({ email });
+    
+    if (existingUser) {
+      return { message: 'Default admin already exists', created: false };
+    }
+
+    const hashedPassword = await bcrypt.hash('123123123', 10);
+    await this.userModel.create({
+      email,
+      password: hashedPassword,
+      firstName: 'Admin',
+      lastName: 'User',
+      role: 'admin',
+      isActive: true,
+    });
+
+    return { message: 'Default admin created successfully', created: true };
+  }
+
   async validatePassword(user: User, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
   }

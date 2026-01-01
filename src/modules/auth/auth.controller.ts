@@ -20,6 +20,11 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Get('seed-admin')
+  async seedAdmin() {
+    return this.authService.seedDefaultAdmin();
+  }
+
   @Post('refresh')
   async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshToken(refreshTokenDto.refreshToken);
