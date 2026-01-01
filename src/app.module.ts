@@ -20,6 +20,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BannersModule } from './modules/banners/banners.module';
+import { SeederModule } from './modules/seeder/seeder.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { BannersModule } from './modules/banners/banners.module';
     DashboardModule,
     ContactModule,
     BannersModule,
+    SeederModule,
   ],
   controllers: [AppController],
   providers: [AppService],
