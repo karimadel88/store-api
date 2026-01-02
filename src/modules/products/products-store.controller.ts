@@ -20,6 +20,6 @@ export class ProductsStoreController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.productsService.findOne(id);
+    return this.productsService.findOneWithReviews(id);
   }
 }

@@ -11,8 +11,9 @@ export class Product extends Document {
 
   @Prop({ trim: true })
   description: string;
-  @Prop({ trim: true })
-  brand: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Brand' })
+  brandId: Types.ObjectId;
 
 
   @Prop({ required: true, unique: true, uppercase: true, trim: true })
@@ -29,6 +30,9 @@ export class Product extends Document {
 
   @Prop({ required: true, default: 0, min: 0 })
   quantity: number;
+
+  @Prop({ default: 0, min: 0 })
+  reservedStock: number;
 
   @Prop({ default: 5, min: 0 })
   lowStockThreshold: number;

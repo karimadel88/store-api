@@ -4,11 +4,13 @@ import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { Customer, Address } from './schemas/customer.schema';
 import { CreateCustomerDto, UpdateCustomerDto, AddressDto, QueryCustomerDto } from './dto/customer.dto';
+import { Order } from '../orders/schemas/order.schema';
 
 @Injectable()
 export class CustomersService {
   constructor(
     @InjectModel(Customer.name) private customerModel: Model<Customer>,
+    @InjectModel(Order.name) private orderModel: Model<Order>,
   ) {}
 
   async create(createDto: CreateCustomerDto): Promise<Customer> {
@@ -119,5 +121,53 @@ export class CustomersService {
     if (!result) {
       throw new NotFoundException('Customer not found');
     }
+  }
+
+  async getWishlist(customerId: string): Promise<unknown> {
+    const customer = await this.customerModel
+      .findById(customerId)
+      .populate('wishlist')
+      .exec();
+    
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    return customer.wishlist;
+  }
+
+  async addToWishlist(customerId: string, productId: string): Promise<Customer> {
+    const customer = await this.customerModel.findById(customerId).exec();
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    const productObjectId = new Types.ObjectId(productId);
+    if (customer.wishlist.some((id) => id.toString() === productId)) {
+      // Already in wishlist
+      return this.findOne(customerId);
+    }
+
+    customer.wishlist.push(productObjectId);
+    await customer.save();
+    return this.findOne(customerId);
+  }
+
+  async removeFromWishlist(customerId: string, productId: string): Promise<Customer> {
+    const customer = await this.customerModel.findById(customerId).exec();
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    customer.wishlist = customer.wishlist.filter((id) => id.toString() !== productId);
+    await customer.save();
+    return this.findOne(customerId);
+  }
+
+  async getOrderHistory(customerId: string): Promise<Order[]> {
+    return this.orderModel
+      .find({ customerId: new Types.ObjectId(customerId) })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }

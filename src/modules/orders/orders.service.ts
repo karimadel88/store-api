@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Order, OrderStatus, PaymentStatus } from './schemas/order.schema';
 import { CreateOrderDto, QueryOrderDto } from './dto/order.dto';
 import { ProductsService } from '../products/products.service';
+import { InventoryService } from '../inventory/inventory.service';
 
 export interface PaginatedOrders {
   data: Order[];
@@ -18,6 +19,7 @@ export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<Order>,
     private readonly productsService: ProductsService,
+    private readonly inventoryService: InventoryService,
   ) {}
 
   private generateOrderNumber(): string {
@@ -60,7 +62,10 @@ export class OrdersService {
     const order = new this.orderModel(orderData);
     const savedOrder = await order.save();
     
-    await this.productsService.decrementStock(createDto.items);
+    // Reserve stock when order is created
+    for (const item of createDto.items) {
+      await this.inventoryService.reserveStock(item.productId, item.quantity);
+    }
     
     return savedOrder;
   }
@@ -102,13 +107,50 @@ export class OrdersService {
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order> {
+    const order = await this.orderModel.findById(id).exec();
+    if (!order) throw new NotFoundException('Order not found');
+
+    const previousStatus = order.status;
     const updates: Record<string, unknown> = { status };
     if (status === OrderStatus.SHIPPED) updates.shippedAt = new Date();
     if (status === OrderStatus.DELIVERED) updates.deliveredAt = new Date();
 
-    const order = await this.orderModel.findByIdAndUpdate(id, updates, { new: true }).exec();
-    if (!order) throw new NotFoundException('Order not found');
-    return order;
+    // Confirm stock reduction when order is confirmed
+    if (status === OrderStatus.CONFIRMED && previousStatus === OrderStatus.PENDING) {
+      for (const item of order.items) {
+        await this.inventoryService.confirmStockReduction(
+          item.productId.toString(),
+          item.quantity,
+          order._id.toString(),
+        );
+      }
+    }
+
+    // Restore stock when order is cancelled
+    if (status === OrderStatus.CANCELLED && previousStatus !== OrderStatus.CANCELLED) {
+      for (const item of order.items) {
+        // If order was confirmed, restore actual stock
+        if (previousStatus === OrderStatus.CONFIRMED || 
+            previousStatus === OrderStatus.PROCESSING || 
+            previousStatus === OrderStatus.SHIPPED) {
+          await this.inventoryService.restoreStock(
+            item.productId.toString(),
+            item.quantity,
+            order._id.toString(),
+          );
+        } else {
+          // If order was pending, just release reserved stock
+          await this.inventoryService.releaseReservedStock(
+            item.productId.toString(),
+            item.quantity,
+          );
+        }
+      }
+    }
+
+    const updatedOrder = await this.orderModel.findByIdAndUpdate(id, updates, { new: true }).exec();
+    if (!updatedOrder) throw new NotFoundException('Order not found after update');
+    return updatedOrder;
   }
 
   async updatePaymentStatus(id: string, paymentStatus: PaymentStatus): Promise<Order> {

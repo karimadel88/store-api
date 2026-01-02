@@ -4,6 +4,7 @@ import { Model, Types } from 'mongoose';
 import { Product } from './schemas/product.schema';
 import { CreateProductDto, UpdateProductDto, UpdateStockDto, QueryProductDto } from './dto/product.dto';
 import { SlugUtil } from '../../common/utils/slug.util';
+import { Review } from '../reviews/schemas/review.schema';
 
 export interface PaginatedProducts {
   data: Product[];
@@ -17,6 +18,7 @@ export interface PaginatedProducts {
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<Product>,
+    @InjectModel(Review.name) private reviewModel: Model<Review>,
   ) {}
 
 
@@ -38,6 +40,7 @@ export class ProductsService {
       slug,
       sku: createProductDto.sku.toUpperCase(),
       categoryId: new Types.ObjectId(createProductDto.categoryId),
+      brandId: createProductDto.brandId ? new Types.ObjectId(createProductDto.brandId) : undefined,
       imageIds: createProductDto.imageIds?.map((id) => new Types.ObjectId(id)) || [],
     });
     return product.save();
@@ -62,14 +65,14 @@ export class ProductsService {
     if (query.search) {
       filter.$text = { $search: query.search };
     }
-    if (query.brand) {
-      filter.brand = query.brand;
-    }
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {
       const priceFilter: any = {};
       if (query.minPrice !== undefined) priceFilter.$gte = query.minPrice;
       if (query.maxPrice !== undefined) priceFilter.$lte = query.maxPrice;
       filter.price = priceFilter;
+    }
+    if (query.brandId) {
+      filter.brandId = new Types.ObjectId(query.brandId);
     }
 
     const [data, total] = await Promise.all([
@@ -77,6 +80,7 @@ export class ProductsService {
         .find(filter)
         .populate('categoryId')
         .populate('imageIds')
+        .populate('brandId')
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
@@ -98,6 +102,7 @@ export class ProductsService {
       .findById(id)
       .populate('categoryId')
       .populate('imageIds')
+      .populate('brandId')
       .exec();
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -105,11 +110,38 @@ export class ProductsService {
     return product;
   }
 
+  async findOneWithReviews(id: string) {
+    const product = await this.findOne(id);
+    
+    const reviews = await this.reviewModel
+      .find({ productId: new Types.ObjectId(id), isApproved: true })
+      .populate('customerId', 'firstName lastName')
+      .sort({ createdAt: -1 })
+      .exec();
+
+    // Calculate rating distribution
+    const ratingDistribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    reviews.forEach((review) => {
+      ratingDistribution[review.rating]++;
+    });
+
+    return {
+      product,
+      reviews,
+      reviewStats: {
+        totalReviews: reviews.length,
+        averageRating: product.avgRating,
+        ratingDistribution,
+      },
+    };
+  }
+
   async findBySlug(slug: string): Promise<Product> {
     const product = await this.productModel
       .findOne({ slug })
       .populate('categoryId')
       .populate('imageIds')
+      .populate('brandId')
       .exec();
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -134,6 +166,9 @@ export class ProductsService {
     if (updateProductDto.categoryId) {
       updateData.categoryId = new Types.ObjectId(updateProductDto.categoryId);
     }
+    if (updateProductDto.brandId) {
+      updateData.brandId = new Types.ObjectId(updateProductDto.brandId);
+    }
     if (updateProductDto.imageIds) {
       updateData.imageIds = updateProductDto.imageIds.map((imgId) => new Types.ObjectId(imgId));
     }
@@ -145,6 +180,7 @@ export class ProductsService {
       .findByIdAndUpdate(id, updateData, { new: true })
       .populate('categoryId')
       .populate('imageIds')
+      .populate('brandId')
       .exec();
 
     if (!product) {

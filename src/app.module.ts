@@ -23,6 +23,11 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BannersModule } from './modules/banners/banners.module';
 import { SeederModule } from './modules/seeder/seeder.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { CustomerAuthModule } from './modules/customer-auth/customer-auth.module';
+import { HomeModule } from './modules/home/home.module';
+import { PaymentMethodsModule } from './modules/payment-methods/payment-methods.module';
+import { BrandsModule } from './modules/brands/brands.module';
 
 @Module({
   imports: [
@@ -71,6 +76,11 @@ import { SeederModule } from './modules/seeder/seeder.module';
     ContactModule,
     BannersModule,
     SeederModule,
+    InventoryModule,
+    CustomerAuthModule,
+    HomeModule,
+    PaymentMethodsModule,
+    BrandsModule,
   ],
   controllers: [AppController],
   providers: [

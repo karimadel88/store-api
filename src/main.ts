@@ -23,7 +23,10 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   // Security: Add helmet for security headers
-  app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+
 
   // Performance: Enable compression
   app.use(compression());
@@ -33,6 +36,7 @@ async function bootstrap() {
     'http://localhost:3000',
     'http://localhost:5173',
     'http://localhost:4200',
+    'http://localhost:8080'
   ];
   
   app.enableCors({

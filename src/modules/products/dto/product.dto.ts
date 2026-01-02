@@ -22,9 +22,9 @@ export class CreateProductDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @IsMongoId()
   @IsOptional()
-  brand?: string;
+  brandId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -91,9 +91,9 @@ export class UpdateProductDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @IsMongoId()
   @IsOptional()
-  brand?: string;
+  brandId?: string;
 
   @IsString()
   @IsOptional()
@@ -174,9 +174,9 @@ export class QueryProductDto {
   @IsOptional()
   search?: string;
 
-  @IsString()
+  @IsMongoId()
   @IsOptional()
-  brand?: string;
+  brandId?: string;
 
   @IsNumber()
   @IsOptional()
