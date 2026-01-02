@@ -33,3 +33,6 @@ export const ReviewSchema = SchemaFactory.createForClass(Review);
 ReviewSchema.index({ productId: 1 });
 ReviewSchema.index({ customerId: 1 });
 ReviewSchema.index({ isApproved: 1 });
+ReviewSchema.index({ productId: 1, isApproved: 1 }); // Compound index for rating queries
+ReviewSchema.index({ createdAt: -1 });
+

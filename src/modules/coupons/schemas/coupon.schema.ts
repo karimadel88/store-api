@@ -46,3 +46,5 @@ export const CouponSchema = SchemaFactory.createForClass(Coupon);
 
 CouponSchema.index({ code: 1 });
 CouponSchema.index({ isActive: 1 });
+CouponSchema.index({ validFrom: 1, validUntil: 1 }); // For date range queries
+
