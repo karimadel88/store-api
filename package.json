@@ -30,6 +30,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/serve-static": "^5.0.4",
+    "@nestjs/swagger": "^11.2.3",
     "@nestjs/throttler": "^6.5.0",
     "bcrypt": "^6.0.0",
     "cache-manager": "^7.2.7",
@@ -44,6 +45,7 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1",
     "winston": "^3.19.0"
   },
   "devDependencies": {

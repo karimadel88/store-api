@@ -59,6 +59,9 @@ export class ProductsService {
     if (query.isFeatured !== undefined) {
       filter.isFeatured = query.isFeatured;
     }
+    if (query.isOnSale) {
+      filter.$expr = { $gt: ['$compareAtPrice', '$price'] };
+    }
     if (query.search) {
       filter.$text = { $search: query.search };
     }

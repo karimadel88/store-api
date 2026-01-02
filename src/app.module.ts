@@ -24,6 +24,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BannersModule } from './modules/banners/banners.module';
 import { SeederModule } from './modules/seeder/seeder.module';
+import { HomeModule } from './modules/home/home.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { SeederModule } from './modules/seeder/seeder.module';
     ContactModule,
     BannersModule,
     SeederModule,
+    HomeModule,
   ],
   controllers: [AppController],
   providers: [

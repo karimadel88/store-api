@@ -170,6 +170,10 @@ export class QueryProductDto {
   @IsOptional()
   isFeatured?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  isOnSale?: boolean;
+
   @IsString()
   @IsOptional()
   search?: string;
