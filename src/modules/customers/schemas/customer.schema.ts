@@ -50,12 +50,6 @@ export class Customer extends Document {
   @Prop({ default: true })
   isActive: boolean;
 
-  @Prop({ required: false })
-  passwordResetToken?: string;
-
-  @Prop({ required: false })
-  passwordResetExpires?: Date;
-
   @Prop()
   lastLoginAt: Date;
 

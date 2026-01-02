@@ -7,14 +7,12 @@ import { Order, OrderSchema } from './schemas/order.schema';
 
 import { ProductsModule } from '../products/products.module';
 import { ShippingModule } from '../shipping/shipping.module';
-import { InventoryModule } from '../inventory/inventory.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Order.name, schema: OrderSchema }]),
     ProductsModule,
     ShippingModule,
-    InventoryModule,
   ],
   controllers: [OrdersController, OrdersStoreController],
   providers: [OrdersService],
