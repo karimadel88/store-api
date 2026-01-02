@@ -80,7 +80,8 @@ export class ProductsService {
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .exec(),
+        .lean()
+        .exec() as unknown as Product[],
       this.productModel.countDocuments(filter).exec(),
     ]);
 
@@ -98,7 +99,8 @@ export class ProductsService {
       .findById(id)
       .populate('categoryId')
       .populate('imageIds')
-      .exec();
+      .lean()
+      .exec() as unknown as Product;
     if (!product) {
       throw new NotFoundException('Product not found');
     }
@@ -110,6 +112,7 @@ export class ProductsService {
       .findOne({ slug })
       .populate('categoryId')
       .populate('imageIds')
+      .lean()
       .exec();
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -182,7 +185,8 @@ export class ProductsService {
         isActive: true,
       })
       .populate('categoryId')
-      .exec();
+      .lean()
+      .exec() as unknown as Product[];
   }
 
   async remove(id: string): Promise<void> {
@@ -193,9 +197,18 @@ export class ProductsService {
   }
 
   async checkStockAvailability(items: { productId: string; quantity: number }[]): Promise<void> {
+    const productIds = items.map((item) => new Types.ObjectId(item.productId));
+    const products = await this.productModel
+      .find({ _id: { $in: productIds } })
+      .select('name quantity isActive')
+      .lean()
+      .exec();
+
+    const productMap = new Map(products.map((p) => [p._id.toString(), p]));
+
     for (const item of items) {
-      const product = await this.productModel.findById(item.productId);
-      
+      const product = productMap.get(item.productId);
+
       if (!product) {
         throw new NotFoundException(`Product not found: ${item.productId}`);
       }
@@ -206,18 +219,22 @@ export class ProductsService {
 
       if (product.quantity < item.quantity) {
         throw new BadRequestException(
-          `Insufficient stock for product: ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`
+          `Insufficient stock for product: ${product.name}. Available: ${product.quantity}, Requested: ${item.quantity}`,
         );
       }
     }
   }
 
   async decrementStock(items: { productId: string; quantity: number }[]): Promise<void> {
-    for (const item of items) {
-      await this.productModel.findByIdAndUpdate(
-        item.productId,
-        { $inc: { quantity: -item.quantity } }
-      );
+    const bulkOps = items.map((item) => ({
+      updateOne: {
+        filter: { _id: new Types.ObjectId(item.productId) },
+        update: { $inc: { quantity: -item.quantity } },
+      },
+    }));
+
+    if (bulkOps.length > 0) {
+      await this.productModel.bulkWrite(bulkOps);
     }
   }
 }

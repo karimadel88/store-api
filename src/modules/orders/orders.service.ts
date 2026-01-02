@@ -83,7 +83,8 @@ export class OrdersService {
         .skip(skip)
         .limit(limit)
         .sort({ createdAt: -1 })
-        .exec(),
+        .lean()
+        .exec() as unknown as Order[],
       this.orderModel.countDocuments(filter).exec(),
     ]);
 
@@ -96,7 +97,8 @@ export class OrdersService {
       .populate('customerId')
       .populate('shippingMethodId')
       .populate('items.productId')
-      .exec();
+      .lean()
+      .exec() as unknown as Order;
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }

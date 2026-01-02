@@ -42,7 +42,8 @@ export class CategoriesService {
       .find(filter)
       .populate('imageId')
       .sort({ sortOrder: 1, name: 1 })
-      .exec();
+      .lean()
+      .exec() as unknown as Category[];
   }
 
   // Used by Store Front
@@ -109,7 +110,8 @@ export class CategoriesService {
     const category = await this.categoryModel
       .findById(id)
       .populate('imageId')
-      .exec();
+      .lean()
+      .exec() as unknown as Category;
     if (!category) {
       throw new NotFoundException('Category not found');
     }
@@ -120,7 +122,8 @@ export class CategoriesService {
     const category = await this.categoryModel
       .findOne({ slug })
       .populate('imageId')
-      .exec();
+      .lean()
+      .exec() as unknown as Category;
     if (!category) {
       throw new NotFoundException('Category not found');
     }

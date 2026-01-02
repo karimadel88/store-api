@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { CacheModule } from '@nestjs/cache-manager';
 import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -36,6 +37,12 @@ import { SeederModule } from './modules/seeder/seeder.module';
       ttl: 60000,
       limit: 100,
     }]),
+
+    CacheModule.register({
+      isGlobal: true,
+      ttl: 60000, // default 1 minute
+      max: 100, // maximum number of items in cache
+    }),
 
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'uploads'),
