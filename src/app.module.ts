@@ -25,6 +25,10 @@ import { ContactModule } from './modules/contact/contact.module';
 import { BannersModule } from './modules/banners/banners.module';
 import { SeederModule } from './modules/seeder/seeder.module';
 import { HomeModule } from './modules/home/home.module';
+import { TransferModule } from './modules/transfer/transfer.module.js';
+import { FaqModule } from './modules/faq/faq.module.js';
+import { BlogModule } from './modules/blog/blog.module.js';
+import { OffersModule } from './modules/offers/offers.module.js';
 
 @Module({
   imports: [
@@ -80,6 +84,10 @@ import { HomeModule } from './modules/home/home.module';
     BannersModule,
     SeederModule,
     HomeModule,
+    TransferModule,
+    FaqModule,
+    BlogModule,
+    OffersModule,
   ],
   controllers: [AppController],
   providers: [

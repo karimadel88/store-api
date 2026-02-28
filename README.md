@@ -93,6 +93,49 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 - Website - [https://nestjs.com](https://nestjs.com/)
 - Twitter - [@nestframework](https://twitter.com/nestframework)
 
+## Manual Transfer Brokerage System
+
+A feature for managing manual money exchange requests between configurable transfer methods (e.g., Vodafone Cash → InstaPay). See [TRANSFER_API.md](TRANSFER_API.md) for full API documentation.
+
+### Configuration
+
+Add the following to your `.env`:
+
+```env
+BROKER_WHATSAPP_PHONE=201234567890
+```
+
+### Seed Data
+
+```bash
+npm run seed
+```
+
+This will create:
+- **6 Transfer Methods**: Vodafone Cash, InstaPay, Bank Transfer, Fawry, Orange Cash, Etisalat Cash
+- **8 Fee Rules**: Various from/to combinations with PERCENT and FIXED fee types
+
+### Test the Feature
+
+```bash
+# Run unit tests
+npm test -- --testPathPattern=transfer
+
+# Quick API test (no auth required)
+curl http://localhost:3000/api/transfer/methods
+```
+
+### Key Endpoints
+
+| Endpoint | Auth | Description |
+|---|---|---|
+| `GET /api/transfer/methods` | No | List enabled methods |
+| `POST /api/transfer/quote` | No | Get fee quote |
+| `POST /api/transfer/confirm` | No | Create order |
+| `GET /api/transfer/orders?phone=...` | No | User's orders |
+| `GET /api/admin/transfer/orders` | JWT | All orders |
+| `PATCH /api/admin/transfer/orders/:id/status` | JWT | Update status |
+
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

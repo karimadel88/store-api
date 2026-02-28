@@ -236,6 +236,12 @@ async function seed() {
       console.log('✅ Arabic Content seeded successfully (5 Categories, 20 Products)');
     }
 
+    // ==========================================
+    // Transfer Methods & Fee Rules
+    // ==========================================
+    const { seedTransferData } = await import('./modules/transfer/transfer-seed.js');
+    await seedTransferData(app);
+
   } catch (error) {
     console.error('❌ Seed failed:', error);
     throw error;
