@@ -7,17 +7,20 @@ export class VisitsMiddleware implements NestMiddleware {
   constructor(private readonly visitsService: VisitsService) {}
 
   use(req: Request, _res: Response, next: NextFunction): void {
-    // Only count actual user-facing requests — skip admin API calls
-    // req.path in NestJS middleware does NOT include the global '/api' prefix,
-    // so the actual path is e.g.  /admin/dashboard/stats  not /api/admin/...
-    const path: string = req.url || req.path || '';
-    const isAdminRoute = path.includes('/admin/');
+    // req.url in NestJS middleware does NOT include the global '/api' prefix.
+    // e.g. request to /api/transfer/quote arrives here as /transfer/quote
+    const url: string = req.url || req.path || '';
 
-    if (!isAdminRoute) {
-      // Fire-and-forget — do not block the request
-      this.visitsService.recordVisit().catch(() => {
-        // Silently ignore errors so visit tracking never breaks the app
-      });
+    // Count ONLY transfer front-office requests.
+    // - Must start with /transfer/
+    // - Must NOT be an admin transfer route (/admin/transfer/)
+    const isTransferRoute = url.startsWith('/transfer/');
+    const isAdminTransferRoute = url.includes('/admin/transfer/');
+    const shouldCount = isTransferRoute && !isAdminTransferRoute;
+
+    if (shouldCount) {
+      // Fire-and-forget — never block the request
+      this.visitsService.recordVisit().catch(() => {/* ignore */});
     }
 
     next();
