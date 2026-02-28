@@ -7,7 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { FeeType } from '../schemas/fee-rule.schema.js';
+import { BenefitType, FeeType } from '../schemas/fee-rule.schema.js';
 
 export class CreateFeeRuleDto {
   @IsMongoId()
@@ -24,17 +24,24 @@ export class CreateFeeRuleDto {
   @Type(() => Number)
   feeValue: number;
 
+  /** Minimum transfer amount allowed */
   @IsNumber()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
-  minFee?: number;
+  minAmount?: number;
 
+  /** Maximum transfer amount allowed */
   @IsNumber()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
-  maxFee?: number;
+  maxAmount?: number;
+
+  /** FEE = client pays a fee; CASHBACK = client gets money back */
+  @IsEnum(BenefitType)
+  @IsOptional()
+  benefitType?: BenefitType;
 
   @IsBoolean()
   @IsOptional()
@@ -65,17 +72,24 @@ export class UpdateFeeRuleDto {
   @Type(() => Number)
   feeValue?: number;
 
+  /** Minimum transfer amount allowed */
   @IsNumber()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
-  minFee?: number;
+  minAmount?: number;
 
+  /** Maximum transfer amount allowed */
   @IsNumber()
   @Min(0)
   @IsOptional()
   @Type(() => Number)
-  maxFee?: number;
+  maxAmount?: number;
+
+  /** FEE = client pays a fee; CASHBACK = client gets money back */
+  @IsEnum(BenefitType)
+  @IsOptional()
+  benefitType?: BenefitType;
 
   @IsBoolean()
   @IsOptional()

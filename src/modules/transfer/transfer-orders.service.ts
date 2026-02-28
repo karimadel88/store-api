@@ -10,7 +10,7 @@ import { Model, Types } from 'mongoose';
 import { TransferOrder, TransferOrderStatus } from './schemas/transfer-order.schema.js';
 import { TransferMethodsService } from './transfer-methods.service.js';
 import { FeeRulesService } from './fee-rules.service.js';
-import { FeeType } from './schemas/fee-rule.schema.js';
+import { BenefitType, FeeType } from './schemas/fee-rule.schema.js';
 import {
   QuoteDto,
   ConfirmTransferDto,
@@ -22,8 +22,14 @@ export interface QuoteResult {
   fromMethod: { id: string; name: string; code: string };
   toMethod: { id: string; name: string; code: string };
   amount: number;
+  /** Fee charged to client. Negative value means cashback (client receives money back). */
   fee: number;
   total: number;
+  benefitType: BenefitType | null;
+  /** Minimum transfer amount allowed by the active rule (null = no limit). */
+  minAmount: number | null;
+  /** Maximum transfer amount allowed by the active rule (null = no limit). */
+  maxAmount: number | null;
   feeRuleId: string | null;
   message?: string;
 }
@@ -101,29 +107,39 @@ export class TransferOrdersService {
         amount: dto.amount,
         fee: 0,
         total: 0,
+        benefitType: null,
+        minAmount: null,
+        maxAmount: null,
         feeRuleId: null,
         message: 'This transfer route is not available at the moment',
       };
     }
 
-    // Calculate fee
-    let fee: number;
+    // Validate amount against rule limits
+    if (rule.minAmount != null && dto.amount < rule.minAmount) {
+      throw new BadRequestException(
+        `Minimum transfer amount for this route is ${rule.minAmount}`,
+      );
+    }
+    if (rule.maxAmount != null && dto.amount > rule.maxAmount) {
+      throw new BadRequestException(
+        `Maximum transfer amount for this route is ${rule.maxAmount}`,
+      );
+    }
+
+    // Calculate fee/cashback value
+    let feeValue: number;
     if (rule.feeType === FeeType.PERCENT) {
-      fee = (dto.amount * rule.feeValue) / 100;
+      feeValue = (dto.amount * rule.feeValue) / 100;
     } else {
-      fee = rule.feeValue;
+      feeValue = rule.feeValue;
     }
 
-    // Apply min/max fee bounds
-    if (rule.minFee != null && fee < rule.minFee) {
-      fee = rule.minFee;
-    }
-    if (rule.maxFee != null && fee > rule.maxFee) {
-      fee = rule.maxFee;
-    }
+    // Determine the sign: cashback → negative fee (client receives money back)
+    const isCashback = rule.benefitType === BenefitType.CASHBACK;
+    const fee = Math.round((isCashback ? -feeValue : feeValue) * 100) / 100;
 
-    // Round to 2 decimal places
-    fee = Math.round(fee * 100) / 100;
+    // total = amount + fee  (for cashback fee is negative, so total < amount)
     const total = Math.round((dto.amount + fee) * 100) / 100;
 
     return {
@@ -133,6 +149,9 @@ export class TransferOrdersService {
       amount: dto.amount,
       fee,
       total,
+      benefitType: rule.benefitType ?? BenefitType.FEE,
+      minAmount: rule.minAmount ?? null,
+      maxAmount: rule.maxAmount ?? null,
       feeRuleId: rule._id.toString(),
     };
   }
@@ -167,7 +186,9 @@ export class TransferOrdersService {
 
     const savedOrder = await order.save();
 
-    this.logger.log(`Transfer order created: ${savedOrder.orderNumber} | ${quoteResult.fromMethod.name} → ${quoteResult.toMethod.name} | Amount: ${dto.amount} | Fee: ${quoteResult.fee}`);
+    this.logger.log(
+      `Transfer order created: ${savedOrder.orderNumber} | ${quoteResult.fromMethod.name} → ${quoteResult.toMethod.name} | Amount: ${dto.amount} | Fee: ${quoteResult.fee} | BenefitType: ${quoteResult.benefitType}`,
+    );
 
     // Return populated order
     return this.findOne(savedOrder._id.toString());

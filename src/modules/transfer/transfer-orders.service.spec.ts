@@ -4,7 +4,7 @@ import { TransferOrdersService, QuoteResult } from './transfer-orders.service.js
 import { TransferMethodsService } from './transfer-methods.service.js';
 import { FeeRulesService } from './fee-rules.service.js';
 import { TransferOrder, TransferOrderStatus } from './schemas/transfer-order.schema.js';
-import { FeeType } from './schemas/fee-rule.schema.js';
+import { BenefitType, FeeType } from './schemas/fee-rule.schema.js';
 
 describe('TransferOrdersService', () => {
   let service: TransferOrdersService;
@@ -91,8 +91,9 @@ describe('TransferOrdersService', () => {
         _id: { toString: () => 'rule1' },
         feeType: FeeType.PERCENT,
         feeValue: 1.5,
-        minFee: null,
-        maxFee: null,
+        benefitType: BenefitType.FEE,
+        minAmount: null,
+        maxAmount: null,
       });
 
       const result: QuoteResult = await service.quote({
@@ -104,6 +105,7 @@ describe('TransferOrdersService', () => {
       expect(result.available).toBe(true);
       expect(result.fee).toBe(15); // 1000 * 1.5 / 100
       expect(result.total).toBe(1015);
+      expect(result.benefitType).toBe(BenefitType.FEE);
     });
 
     it('should calculate FIXED fee correctly', async () => {
@@ -115,8 +117,9 @@ describe('TransferOrdersService', () => {
         _id: { toString: () => 'rule2' },
         feeType: FeeType.FIXED,
         feeValue: 25,
-        minFee: null,
-        maxFee: null,
+        benefitType: BenefitType.FEE,
+        minAmount: null,
+        maxAmount: null,
       });
 
       const result = await service.quote({
@@ -130,7 +133,7 @@ describe('TransferOrdersService', () => {
       expect(result.total).toBe(525);
     });
 
-    it('should apply minFee when calculated fee is below minimum', async () => {
+    it('should throw when amount is below minAmount', async () => {
       (transferMethodsService.findOne as jest.Mock)
         .mockResolvedValueOnce(mockVodafone)
         .mockResolvedValueOnce(mockInstapay);
@@ -139,21 +142,21 @@ describe('TransferOrdersService', () => {
         _id: { toString: () => 'rule3' },
         feeType: FeeType.PERCENT,
         feeValue: 1.0,
-        minFee: 10,
-        maxFee: null,
+        benefitType: BenefitType.FEE,
+        minAmount: 200,
+        maxAmount: null,
       });
 
-      const result = await service.quote({
-        fromMethodId: '507f1f77bcf86cd799439011',
-        toMethodId: '507f1f77bcf86cd799439012',
-        amount: 100, // 1% of 100 = 1, but minFee = 10
-      });
-
-      expect(result.fee).toBe(10);
-      expect(result.total).toBe(110);
+      await expect(
+        service.quote({
+          fromMethodId: '507f1f77bcf86cd799439011',
+          toMethodId: '507f1f77bcf86cd799439012',
+          amount: 100, // below minAmount of 200
+        }),
+      ).rejects.toThrow('Minimum transfer amount for this route is 200');
     });
 
-    it('should apply maxFee when calculated fee exceeds maximum', async () => {
+    it('should throw when amount is above maxAmount', async () => {
       (transferMethodsService.findOne as jest.Mock)
         .mockResolvedValueOnce(mockVodafone)
         .mockResolvedValueOnce(mockInstapay);
@@ -161,19 +164,69 @@ describe('TransferOrdersService', () => {
       (feeRulesService.findBestRule as jest.Mock).mockResolvedValue({
         _id: { toString: () => 'rule4' },
         feeType: FeeType.PERCENT,
-        feeValue: 5.0,
-        minFee: null,
-        maxFee: 50,
+        feeValue: 1.0,
+        benefitType: BenefitType.FEE,
+        minAmount: null,
+        maxAmount: 5000,
+      });
+
+      await expect(
+        service.quote({
+          fromMethodId: '507f1f77bcf86cd799439011',
+          toMethodId: '507f1f77bcf86cd799439012',
+          amount: 10000, // above maxAmount of 5000
+        }),
+      ).rejects.toThrow('Maximum transfer amount for this route is 5000');
+    });
+
+    it('should include minAmount and maxAmount in the quote response', async () => {
+      (transferMethodsService.findOne as jest.Mock)
+        .mockResolvedValueOnce(mockVodafone)
+        .mockResolvedValueOnce(mockInstapay);
+
+      (feeRulesService.findBestRule as jest.Mock).mockResolvedValue({
+        _id: { toString: () => 'rule5' },
+        feeType: FeeType.FIXED,
+        feeValue: 10,
+        benefitType: BenefitType.FEE,
+        minAmount: 100,
+        maxAmount: 10000,
       });
 
       const result = await service.quote({
         fromMethodId: '507f1f77bcf86cd799439011',
         toMethodId: '507f1f77bcf86cd799439012',
-        amount: 5000, // 5% of 5000 = 250, but maxFee = 50
+        amount: 500,
       });
 
-      expect(result.fee).toBe(50);
-      expect(result.total).toBe(5050);
+      expect(result.minAmount).toBe(100);
+      expect(result.maxAmount).toBe(10000);
+    });
+
+    it('should return CASHBACK as negative fee and reduce total', async () => {
+      (transferMethodsService.findOne as jest.Mock)
+        .mockResolvedValueOnce(mockVodafone)
+        .mockResolvedValueOnce(mockInstapay);
+
+      (feeRulesService.findBestRule as jest.Mock).mockResolvedValue({
+        _id: { toString: () => 'rule6' },
+        feeType: FeeType.PERCENT,
+        feeValue: 2.0, // 2% cashback
+        benefitType: BenefitType.CASHBACK,
+        minAmount: null,
+        maxAmount: null,
+      });
+
+      const result = await service.quote({
+        fromMethodId: '507f1f77bcf86cd799439011',
+        toMethodId: '507f1f77bcf86cd799439012',
+        amount: 1000,
+      });
+
+      expect(result.available).toBe(true);
+      expect(result.benefitType).toBe(BenefitType.CASHBACK);
+      expect(result.fee).toBe(-20);    // 2% of 1000 = 20, cashback → negative
+      expect(result.total).toBe(980);  // 1000 - 20
     });
 
     it('should return not available when no rule exists', async () => {
@@ -192,6 +245,9 @@ describe('TransferOrdersService', () => {
       expect(result.available).toBe(false);
       expect(result.fee).toBe(0);
       expect(result.total).toBe(0);
+      expect(result.benefitType).toBeNull();
+      expect(result.minAmount).toBeNull();
+      expect(result.maxAmount).toBeNull();
     });
 
     it('should throw when from == to', async () => {

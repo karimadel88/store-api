@@ -6,6 +6,11 @@ export enum FeeType {
   FIXED = 'FIXED',
 }
 
+export enum BenefitType {
+  FEE = 'FEE',
+  CASHBACK = 'CASHBACK',
+}
+
 @Schema({ timestamps: true })
 export class FeeRule extends Document {
   @Prop({ type: Types.ObjectId, ref: 'TransferMethod', required: true })
@@ -20,11 +25,17 @@ export class FeeRule extends Document {
   @Prop({ required: true, min: 0 })
   feeValue: number;
 
+  /** Minimum transfer amount allowed for this rule */
   @Prop({ min: 0 })
-  minFee: number;
+  minAmount: number;
 
+  /** Maximum transfer amount allowed for this rule */
   @Prop({ min: 0 })
-  maxFee: number;
+  maxAmount: number;
+
+  /** Whether this rule charges a fee or gives cashback to the client */
+  @Prop({ type: String, enum: BenefitType, default: BenefitType.FEE })
+  benefitType: BenefitType;
 
   @Prop({ default: true })
   enabled: boolean;
