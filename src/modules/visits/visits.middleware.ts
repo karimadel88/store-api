@@ -8,8 +8,10 @@ export class VisitsMiddleware implements NestMiddleware {
 
   use(req: Request, _res: Response, next: NextFunction): void {
     // Only count actual user-facing requests — skip admin API calls
-    const path: string = req.path || '';
-    const isAdminRoute = path.includes('/api/admin/');
+    // req.path in NestJS middleware does NOT include the global '/api' prefix,
+    // so the actual path is e.g.  /admin/dashboard/stats  not /api/admin/...
+    const path: string = req.url || req.path || '';
+    const isAdminRoute = path.includes('/admin/');
 
     if (!isAdminRoute) {
       // Fire-and-forget — do not block the request
