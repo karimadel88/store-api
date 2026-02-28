@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -29,6 +29,8 @@ import { TransferModule } from './modules/transfer/transfer.module.js';
 import { FaqModule } from './modules/faq/faq.module.js';
 import { BlogModule } from './modules/blog/blog.module.js';
 import { OffersModule } from './modules/offers/offers.module.js';
+import { VisitsModule } from './modules/visits/visits.module.js';
+import { VisitsMiddleware } from './modules/visits/visits.middleware.js';
 
 @Module({
   imports: [
@@ -88,6 +90,7 @@ import { OffersModule } from './modules/offers/offers.module.js';
     FaqModule,
     BlogModule,
     OffersModule,
+    VisitsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -99,5 +102,9 @@ import { OffersModule } from './modules/offers/offers.module.js';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(VisitsMiddleware).forRoutes('*');
+  }
+}
 
