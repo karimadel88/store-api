@@ -37,7 +37,7 @@ app.use(helmet({
     'http://localhost:5173',
     'http://localhost:4200',
     'http://localhost:8080',
-    'http://localhost:5175'
+    'http://localhost:5174'
   ];
   
   app.enableCors({
